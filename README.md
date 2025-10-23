@@ -51,11 +51,18 @@ NEW_RELIC_API_KEY=your-user-api-key
 NEW_RELIC_ACCOUNT_ID=your-account-id
 ```
 
-## Usage with Claude Code
+## Usage with Claude Desktop and Claude Code
 
-Add this server to your Claude Code MCP settings file:
+### Step 1: Configure in Claude Desktop
 
-**macOS/Linux**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+First, add this server to your Claude Desktop configuration file:
+
+**Configuration file location:**
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+- **Linux**: `~/.config/Claude/claude_desktop_config.json`
+
+**Add the following configuration:**
 
 ```json
 {
@@ -72,7 +79,44 @@ Add this server to your Claude Code MCP settings file:
 }
 ```
 
-Replace `/absolute/path/to/newrelic-mcp` with the actual path to this project.
+**Important:**
+- Replace `/absolute/path/to/newrelic-mcp` with the actual path to this project
+- Replace `your-user-api-key` with your New Relic User API Key
+- Replace `your-account-id` with your New Relic Account ID
+
+**Example (macOS):**
+```json
+{
+  "mcpServers": {
+    "newrelic": {
+      "command": "node",
+      "args": ["/Users/yourusername/newrelic-mcp/dist/index.js"],
+      "env": {
+        "NEW_RELIC_API_KEY": "NRAK-XXXXXXXXXXXXXXXXXXXXX",
+        "NEW_RELIC_ACCOUNT_ID": "1234567"
+      }
+    }
+  }
+}
+```
+
+After updating the configuration:
+1. **Save the file**
+2. **Restart Claude Desktop** completely (Quit and reopen)
+3. Look for the 🔌 icon in Claude Desktop to verify the MCP server is connected
+
+### Step 2: Import into Claude Code
+
+Once configured in Claude Desktop, you can import the server into Claude Code:
+
+1. Open **Claude Code** in your terminal or IDE
+2. The MCP server will be **automatically available** if you have Claude Desktop configured
+3. Alternatively, you can add it directly to Claude Code's MCP settings
+
+**For Claude Code direct configuration**, create/edit the file at:
+- **macOS/Linux**: `~/.config/claude-code/mcp_settings.json`
+
+With the same configuration format as above.
 
 ## Available Tools
 
@@ -138,30 +182,51 @@ Watch mode for auto-rebuilding:
 npm run watch
 ```
 
-## Example Claude Code Interactions
+## Example Interactions
 
-Once configured, you can ask Claude Code:
+Once configured, you can ask Claude (in Claude Desktop or Claude Code):
 
 - "Show me recent errors from New Relic logs"
 - "Search for logs containing 'payment failed' in the last 2 hours"
 - "Query New Relic for all logs from the api-gateway service with 500 status codes"
 - "Get the last 100 log entries from New Relic"
+- "Find all logs with response time > 5000ms in the last hour"
+- "Show me error logs grouped by service name"
 
 ## Troubleshooting
+
+### MCP Server Connection Issues
+
+**Server not showing in Claude Desktop:**
+- Verify the config file path is correct for your OS
+- Check that the JSON syntax is valid (no trailing commas, proper quotes)
+- Ensure the path to `dist/index.js` is absolute, not relative
+- Restart Claude Desktop completely (Quit, not just close window)
+- Check Claude Desktop logs: `View > Developer > Show Logs`
+
+**"Cannot find module" errors:**
+- Make sure you ran `npm install` in the project directory
+- Verify you ran `npm run build` to compile TypeScript
+- Check that the `dist/` folder exists and contains the compiled files
+
+### New Relic API Issues
 
 **"Configuration error" on startup:**
 - Ensure `NEW_RELIC_API_KEY` and `NEW_RELIC_ACCOUNT_ID` are set correctly
 - Verify your API key has the necessary permissions (User key, not Ingest key)
+- Get your User API key from: https://one.newrelic.com/api-keys
 
 **"Failed to query New Relic":**
 - Check your API key is valid and not expired
-- Verify your account ID is correct
+- Verify your account ID is correct (find it at https://one.newrelic.com/admin-portal)
 - Ensure you have access to the Logs product in New Relic
+- Test your credentials using the NerdGraph API Explorer
 
 **No results returned:**
 - Verify you have log data in New Relic for the specified time range
 - Check your NRQL syntax is valid
 - Try a broader time range (e.g., "1 DAY AGO" instead of "1 HOUR AGO")
+- Use the New Relic UI to confirm logs exist for your query
 
 ## NRQL Resources
 
