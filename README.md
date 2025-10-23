@@ -17,9 +17,10 @@ A Model Context Protocol (MCP) server that provides AI agents like Claude Code w
 
 ## Installation
 
-1. Clone this repository or navigate to the project directory:
+1. Clone this repository:
 
 ```bash
+git clone https://github.com/xelber/newrelic-mcp.git
 cd newrelic-mcp
 ```
 
