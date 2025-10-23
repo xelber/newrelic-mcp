@@ -1,0 +1,33 @@
+{
+  "name": "newrelic-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server for querying New Relic logs",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "newrelic-mcp-server": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "start": "node dist/index.js",
+    "dev": "tsc && node dist/index.js"
+  },
+  "keywords": [
+    "mcp",
+    "newrelic",
+    "logs",
+    "model-context-protocol"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "axios": "^1.7.9",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "typescript": "^5.7.2"
+  }
+}
