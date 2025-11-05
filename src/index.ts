@@ -12,6 +12,9 @@ import {
   QueryLogsInputSchema,
   SearchLogsInputSchema,
   GetRecentLogsInputSchema,
+  GetApmMetricsInputSchema,
+  GetTransactionTracesInputSchema,
+  QueryApmInputSchema,
 } from './types.js';
 
 // Load and validate configuration from environment variables
@@ -121,6 +124,81 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           },
         },
       },
+      {
+        name: 'query-apm',
+        description:
+          'Execute a custom NRQL query against New Relic APM data. ' +
+          'Use this for complex queries against Transaction, Metric, or other APM event types. ' +
+          'Example: "SELECT average(duration) FROM Transaction WHERE appName = \'MyApp\' SINCE 1 HOUR AGO"',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            query: {
+              type: 'string',
+              description: 'NRQL query to execute against APM data',
+            },
+          },
+          required: ['query'],
+        },
+      },
+      {
+        name: 'get-apm-metrics',
+        description:
+          'Get APM performance metrics for applications including response time, throughput, error rate, and Apdex. ' +
+          'This provides a comprehensive overview of application performance.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            appName: {
+              type: 'string',
+              description: 'Application name to filter metrics (optional)',
+            },
+            timeRange: {
+              type: 'string',
+              description: 'Time range (e.g., "1 HOUR AGO", "30 MINUTES AGO", "1 DAY AGO")',
+              default: '1 HOUR AGO',
+            },
+            metrics: {
+              type: 'array',
+              items: {
+                type: 'string',
+                enum: ['responseTime', 'throughput', 'errorRate', 'apdex'],
+              },
+              description: 'Metrics to retrieve',
+              default: ['responseTime', 'throughput', 'errorRate'],
+            },
+          },
+        },
+      },
+      {
+        name: 'get-transaction-traces',
+        description:
+          'Get transaction traces from APM, optionally filtering for slow transactions. ' +
+          'Useful for identifying performance bottlenecks and slow database queries.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            appName: {
+              type: 'string',
+              description: 'Application name to filter transactions',
+            },
+            minDuration: {
+              type: 'number',
+              description: 'Minimum transaction duration in seconds to filter slow transactions',
+            },
+            limit: {
+              type: 'number',
+              description: 'Maximum number of transaction traces to return',
+              default: 10,
+            },
+            timeRange: {
+              type: 'string',
+              description: 'Time range to search within',
+              default: '1 HOUR AGO',
+            },
+          },
+        },
+      },
     ],
   };
 });
@@ -161,6 +239,48 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case 'get-recent-logs': {
         const { limit, timeRange } = GetRecentLogsInputSchema.parse(args);
         const results = await newRelicClient.getRecentLogs(limit, timeRange);
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(results, null, 2),
+            },
+          ],
+        };
+      }
+
+      case 'query-apm': {
+        const { query } = QueryApmInputSchema.parse(args);
+        const results = await newRelicClient.queryApm(query);
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(results, null, 2),
+            },
+          ],
+        };
+      }
+
+      case 'get-apm-metrics': {
+        const { appName, timeRange, metrics } = GetApmMetricsInputSchema.parse(args);
+        const results = await newRelicClient.getApmMetrics(appName, timeRange, metrics);
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(results, null, 2),
+            },
+          ],
+        };
+      }
+
+      case 'get-transaction-traces': {
+        const { appName, minDuration, limit, timeRange } = GetTransactionTracesInputSchema.parse(args);
+        const results = await newRelicClient.getTransactionTraces(appName, minDuration, limit, timeRange);
 
         return {
           content: [
