@@ -103,6 +103,88 @@ export class NewRelicClient {
   }
 
   /**
+   * Query APM data with custom NRQL
+   */
+  async queryApm(nrqlQuery: string): Promise<any[]> {
+    return this.executeNRQL(nrqlQuery);
+  }
+
+  /**
+   * Get APM metrics for applications
+   */
+  async getApmMetrics(
+    appName?: string,
+    timeRange: string = '1 HOUR AGO',
+    metrics: string[] = ['responseTime', 'throughput', 'errorRate']
+  ): Promise<any[]> {
+    const appFilter = appName ? `WHERE appName = '${this.escapeLike(appName)}'` : '';
+    const results: any[] = [];
+
+    // Build queries for each requested metric
+    for (const metric of metrics) {
+      let query = '';
+
+      switch (metric) {
+        case 'responseTime':
+          query = `SELECT average(duration) as responseTime, appName FROM Transaction ${appFilter} SINCE ${timeRange} FACET appName TIMESERIES`;
+          break;
+        case 'throughput':
+          query = `SELECT rate(count(*), 1 minute) as throughput, appName FROM Transaction ${appFilter} SINCE ${timeRange} FACET appName TIMESERIES`;
+          break;
+        case 'errorRate':
+          query = `SELECT percentage(count(*), WHERE error IS true) as errorRate, appName FROM Transaction ${appFilter} SINCE ${timeRange} FACET appName TIMESERIES`;
+          break;
+        case 'apdex':
+          query = `SELECT apdex(duration, t: 0.5) as apdex, appName FROM Transaction ${appFilter} SINCE ${timeRange} FACET appName`;
+          break;
+        default:
+          continue;
+      }
+
+      try {
+        const metricResults = await this.executeNRQL(query);
+        results.push({
+          metric,
+          data: metricResults,
+        });
+      } catch (error) {
+        // Continue with other metrics if one fails
+        results.push({
+          metric,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Get transaction traces (slow or all transactions)
+   */
+  async getTransactionTraces(
+    appName?: string,
+    minDuration?: number,
+    limit: number = 10,
+    timeRange: string = '1 HOUR AGO'
+  ): Promise<any[]> {
+    const conditions: string[] = [];
+
+    if (appName) {
+      conditions.push(`appName = '${this.escapeLike(appName)}'`);
+    }
+
+    if (minDuration !== undefined) {
+      conditions.push(`duration > ${minDuration}`);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')} ` : '';
+    const query = `SELECT name, appName, duration, timestamp, error FROM Transaction ${whereClause}SINCE ${timeRange} ORDER BY duration DESC LIMIT ${limit}`;
+
+    return this.executeNRQL(query);
+  }
+
+  /**
    * Escape quotes in NRQL queries
    */
   private escapeQuery(query: string): string {

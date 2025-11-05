@@ -1,12 +1,18 @@
 # New Relic MCP Server
 
-A Model Context Protocol (MCP) server that provides AI agents like Claude Code with access to New Relic logs through the NerdGraph API.
+A Model Context Protocol (MCP) server that provides AI agents like Claude Code with access to New Relic logs and APM data through the NerdGraph API.
 
 ## Features
 
+### Log Tools
 - **query-logs**: Execute custom NRQL queries against New Relic logs
 - **search-logs**: Search logs with keyword filtering and optional attributes
 - **get-recent-logs**: Retrieve the most recent log entries
+
+### APM Tools
+- **query-apm**: Execute custom NRQL queries against APM data (transactions, metrics, etc.)
+- **get-apm-metrics**: Get application performance metrics (response time, throughput, error rate, Apdex)
+- **get-transaction-traces**: Retrieve transaction traces with optional filtering for slow transactions
 
 ## Prerequisites
 
@@ -169,7 +175,79 @@ get-recent-logs with limit: 100
 get-recent-logs with limit: 25, timeRange: "30 MINUTES AGO"
 ```
 
+### 4. query-apm
+
+Execute custom NRQL queries against APM data for advanced analysis.
+
+**Example queries:**
+
+```
+query-apm with query: "SELECT average(duration) FROM Transaction WHERE appName = 'MyApp' SINCE 1 HOUR AGO"
+
+query-apm with query: "SELECT count(*) FROM Transaction WHERE error IS true FACET appName SINCE 1 DAY AGO"
+
+query-apm with query: "SELECT percentile(duration, 95) FROM Transaction WHERE transactionType = 'Web' SINCE 30 MINUTES AGO TIMESERIES"
+```
+
+### 5. get-apm-metrics
+
+Get comprehensive application performance metrics including response time, throughput, error rate, and Apdex score.
+
+**Parameters:**
+- `appName` (optional): Filter metrics for a specific application
+- `timeRange` (default: "1 HOUR AGO"): Time range for metrics
+- `metrics` (default: ["responseTime", "throughput", "errorRate"]): Array of metrics to retrieve
+  - Options: "responseTime", "throughput", "errorRate", "apdex"
+
+**Examples:**
+
+```
+get-apm-metrics with appName: "MyApp", timeRange: "2 HOURS AGO"
+
+get-apm-metrics with metrics: ["responseTime", "errorRate", "apdex"]
+
+get-apm-metrics with appName: "EcommerceApp", metrics: ["throughput", "responseTime"], timeRange: "1 DAY AGO"
+```
+
+### 6. get-transaction-traces
+
+Retrieve transaction traces to identify performance bottlenecks and slow operations.
+
+**Parameters:**
+- `appName` (optional): Filter transactions for a specific application
+- `minDuration` (optional): Minimum transaction duration in seconds to filter slow transactions
+- `limit` (default: 10): Maximum number of transaction traces to return
+- `timeRange` (default: "1 HOUR AGO"): Time range to search
+
+**Examples:**
+
+```
+get-transaction-traces with appName: "MyApp", minDuration: 2.0, limit: 20
+
+get-transaction-traces with minDuration: 5.0, timeRange: "30 MINUTES AGO"
+
+get-transaction-traces with appName: "APIService", limit: 50
+```
+
 ## Development
+
+Run tests:
+
+```bash
+npm test
+```
+
+Run tests with coverage:
+
+```bash
+npm run test:coverage
+```
+
+Run tests in watch mode:
+
+```bash
+npm run test:watch
+```
 
 Run in development mode (builds and starts):
 
@@ -183,16 +261,32 @@ Watch mode for auto-rebuilding:
 npm run watch
 ```
 
+Build the project:
+
+```bash
+npm run build
+```
+
 ## Example Interactions
 
 Once configured, you can ask Claude (in Claude Desktop or Claude Code):
 
+### Log Queries
 - "Show me recent errors from New Relic logs"
 - "Search for logs containing 'payment failed' in the last 2 hours"
 - "Query New Relic for all logs from the api-gateway service with 500 status codes"
 - "Get the last 100 log entries from New Relic"
 - "Find all logs with response time > 5000ms in the last hour"
 - "Show me error logs grouped by service name"
+
+### APM Queries
+- "Show me the response time and throughput for MyApp in the last hour"
+- "Get APM metrics for all applications including error rates"
+- "Find slow transactions that took longer than 3 seconds"
+- "What's the error rate for MyApp over the past 2 hours?"
+- "Show me the slowest 20 transactions from the EcommerceApp"
+- "Get the Apdex score and response time for all my applications"
+- "Find all transactions that resulted in errors in the last 30 minutes"
 
 ## Troubleshooting
 
@@ -233,6 +327,9 @@ Once configured, you can ask Claude (in Claude Desktop or Claude Code):
 
 - [New Relic NRQL Documentation](https://docs.newrelic.com/docs/query-your-data/nrql-new-relic-query-language/get-started/introduction-nrql-new-relics-query-language/)
 - [Log Query Examples](https://docs.newrelic.com/docs/logs/ui-data/query-syntax-logs/)
+- [APM Data and NRQL](https://docs.newrelic.com/docs/data-apis/understand-data/event-data/events-reported-apm/)
+- [Query APM Metric Data](https://docs.newrelic.com/docs/data-apis/understand-data/metric-data/query-apm-metric-timeslice-data-nrql/)
+- [Transaction Event Attributes](https://docs.newrelic.com/attribute-dictionary/?event=Transaction)
 
 ## License
 
