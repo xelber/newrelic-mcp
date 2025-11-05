@@ -123,7 +123,8 @@ export class NewRelicClient {
     for (const metric of metrics) {
       let query = '';
 
-      // When filtering by appName, use WHERE clause; otherwise FACET by appName
+      // When filtering by appName, use WHERE clause with TIMESERIES
+      // When no appName, aggregate across all apps (no FACET to avoid context issues)
       if (appName) {
         const escapedAppName = this.escapeLike(appName);
         switch (metric) {
@@ -143,19 +144,20 @@ export class NewRelicClient {
             continue;
         }
       } else {
-        // No app filter - get metrics for all apps using FACET
+        // No app filter - get aggregated metrics across all apps with TIMESERIES
+        // Note: We don't use FACET here to avoid "value must be constant" NRQL errors
         switch (metric) {
           case 'responseTime':
-            query = `SELECT average(duration) as responseTime FROM Transaction SINCE ${timeRange} FACET appName TIMESERIES`;
+            query = `SELECT average(duration) as responseTime FROM Transaction SINCE ${timeRange} TIMESERIES`;
             break;
           case 'throughput':
-            query = `SELECT rate(count(*), 1 minute) as throughput FROM Transaction SINCE ${timeRange} FACET appName TIMESERIES`;
+            query = `SELECT rate(count(*), 1 minute) as throughput FROM Transaction SINCE ${timeRange} TIMESERIES`;
             break;
           case 'errorRate':
-            query = `SELECT percentage(count(*), WHERE error IS true) as errorRate FROM Transaction SINCE ${timeRange} FACET appName TIMESERIES`;
+            query = `SELECT percentage(count(*), WHERE error IS true) as errorRate FROM Transaction SINCE ${timeRange} TIMESERIES`;
             break;
           case 'apdex':
-            query = `SELECT apdex(duration, t: 0.5) as apdex FROM Transaction SINCE ${timeRange} FACET appName`;
+            query = `SELECT apdex(duration, t: 0.5) as apdex FROM Transaction SINCE ${timeRange}`;
             break;
           default:
             continue;

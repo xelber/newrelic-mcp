@@ -194,10 +194,14 @@ query-apm with query: "SELECT percentile(duration, 95) FROM Transaction WHERE tr
 Get comprehensive application performance metrics including response time, throughput, error rate, and Apdex score.
 
 **Parameters:**
-- `appName` (optional): Filter metrics for a specific application
+- `appName` (optional): Filter metrics for a specific application. If not provided, returns aggregated metrics across all applications.
 - `timeRange` (default: "1 HOUR AGO"): Time range for metrics
 - `metrics` (default: ["responseTime", "throughput", "errorRate"]): Array of metrics to retrieve
   - Options: "responseTime", "throughput", "errorRate", "apdex"
+
+**Behavior:**
+- With `appName`: Returns time-series metrics for the specified application
+- Without `appName`: Returns aggregated metrics across all applications (not broken down by app)
 
 **Examples:**
 
@@ -208,6 +212,8 @@ get-apm-metrics with metrics: ["responseTime", "errorRate", "apdex"]
 
 get-apm-metrics with appName: "EcommerceApp", metrics: ["throughput", "responseTime"], timeRange: "1 DAY AGO"
 ```
+
+**Note:** To get metrics for multiple specific applications, call this tool separately for each application name.
 
 ### 6. get-transaction-traces
 
