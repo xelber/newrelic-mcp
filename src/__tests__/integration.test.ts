@@ -243,31 +243,34 @@ describe('NRQL Query Construction', () => {
       expect(query).not.toContain('FACET');
     });
 
-    it('should construct response time query without appName filter', () => {
-      const query = `SELECT average(duration) as responseTime FROM Transaction SINCE 1 HOUR AGO FACET appName TIMESERIES`;
+    it('should construct response time query without appName filter (aggregated)', () => {
+      const query = `SELECT average(duration) as responseTime FROM Transaction SINCE 1 HOUR AGO TIMESERIES`;
       expect(query).toContain('average(duration)');
       expect(query).toContain('FROM Transaction');
-      expect(query).toContain('FACET appName');
       expect(query).toContain('TIMESERIES');
       expect(query).not.toContain('WHERE');
+      expect(query).not.toContain('FACET');
     });
 
-    it('should construct throughput query', () => {
-      const query = `SELECT rate(count(*), 1 minute) as throughput FROM Transaction SINCE 1 HOUR AGO FACET appName TIMESERIES`;
+    it('should construct throughput query (aggregated)', () => {
+      const query = `SELECT rate(count(*), 1 minute) as throughput FROM Transaction SINCE 1 HOUR AGO TIMESERIES`;
       expect(query).toContain('rate(count(*), 1 minute)');
       expect(query).toContain('as throughput');
+      expect(query).not.toContain('FACET');
     });
 
-    it('should construct error rate query', () => {
-      const query = `SELECT percentage(count(*), WHERE error IS true) as errorRate FROM Transaction SINCE 1 HOUR AGO FACET appName TIMESERIES`;
+    it('should construct error rate query (aggregated)', () => {
+      const query = `SELECT percentage(count(*), WHERE error IS true) as errorRate FROM Transaction SINCE 1 HOUR AGO TIMESERIES`;
       expect(query).toContain('percentage(count(*), WHERE error IS true)');
       expect(query).toContain('as errorRate');
+      expect(query).not.toContain('FACET');
     });
 
-    it('should construct apdex query', () => {
-      const query = `SELECT apdex(duration, t: 0.5) as apdex FROM Transaction SINCE 1 HOUR AGO FACET appName`;
+    it('should construct apdex query (aggregated)', () => {
+      const query = `SELECT apdex(duration, t: 0.5) as apdex FROM Transaction SINCE 1 HOUR AGO`;
       expect(query).toContain('apdex(duration, t: 0.5)');
       expect(query).toContain('as apdex');
+      expect(query).not.toContain('FACET');
     });
 
     it('should construct transaction trace query with filters', () => {
