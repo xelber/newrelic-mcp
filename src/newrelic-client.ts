@@ -117,28 +117,49 @@ export class NewRelicClient {
     timeRange: string = '1 HOUR AGO',
     metrics: string[] = ['responseTime', 'throughput', 'errorRate']
   ): Promise<any[]> {
-    const appFilter = appName ? `WHERE appName = '${this.escapeLike(appName)}'` : '';
     const results: any[] = [];
 
     // Build queries for each requested metric
     for (const metric of metrics) {
       let query = '';
 
-      switch (metric) {
-        case 'responseTime':
-          query = `SELECT average(duration) as responseTime, appName FROM Transaction ${appFilter} SINCE ${timeRange} FACET appName TIMESERIES`;
-          break;
-        case 'throughput':
-          query = `SELECT rate(count(*), 1 minute) as throughput, appName FROM Transaction ${appFilter} SINCE ${timeRange} FACET appName TIMESERIES`;
-          break;
-        case 'errorRate':
-          query = `SELECT percentage(count(*), WHERE error IS true) as errorRate, appName FROM Transaction ${appFilter} SINCE ${timeRange} FACET appName TIMESERIES`;
-          break;
-        case 'apdex':
-          query = `SELECT apdex(duration, t: 0.5) as apdex, appName FROM Transaction ${appFilter} SINCE ${timeRange} FACET appName`;
-          break;
-        default:
-          continue;
+      // When filtering by appName, use WHERE clause; otherwise FACET by appName
+      if (appName) {
+        const escapedAppName = this.escapeLike(appName);
+        switch (metric) {
+          case 'responseTime':
+            query = `SELECT average(duration) as responseTime FROM Transaction WHERE appName = '${escapedAppName}' SINCE ${timeRange} TIMESERIES`;
+            break;
+          case 'throughput':
+            query = `SELECT rate(count(*), 1 minute) as throughput FROM Transaction WHERE appName = '${escapedAppName}' SINCE ${timeRange} TIMESERIES`;
+            break;
+          case 'errorRate':
+            query = `SELECT percentage(count(*), WHERE error IS true) as errorRate FROM Transaction WHERE appName = '${escapedAppName}' SINCE ${timeRange} TIMESERIES`;
+            break;
+          case 'apdex':
+            query = `SELECT apdex(duration, t: 0.5) as apdex FROM Transaction WHERE appName = '${escapedAppName}' SINCE ${timeRange}`;
+            break;
+          default:
+            continue;
+        }
+      } else {
+        // No app filter - get metrics for all apps using FACET
+        switch (metric) {
+          case 'responseTime':
+            query = `SELECT average(duration) as responseTime FROM Transaction SINCE ${timeRange} FACET appName TIMESERIES`;
+            break;
+          case 'throughput':
+            query = `SELECT rate(count(*), 1 minute) as throughput FROM Transaction SINCE ${timeRange} FACET appName TIMESERIES`;
+            break;
+          case 'errorRate':
+            query = `SELECT percentage(count(*), WHERE error IS true) as errorRate FROM Transaction SINCE ${timeRange} FACET appName TIMESERIES`;
+            break;
+          case 'apdex':
+            query = `SELECT apdex(duration, t: 0.5) as apdex FROM Transaction SINCE ${timeRange} FACET appName`;
+            break;
+          default:
+            continue;
+        }
       }
 
       try {

@@ -234,28 +234,38 @@ describe('NRQL Query Construction', () => {
   });
 
   describe('APM Queries', () => {
-    it('should construct response time query', () => {
-      const query = `SELECT average(duration) as responseTime, appName FROM Transaction WHERE appName = 'MyApp' SINCE 1 HOUR AGO FACET appName TIMESERIES`;
+    it('should construct response time query with appName filter', () => {
+      const query = `SELECT average(duration) as responseTime FROM Transaction WHERE appName = 'MyApp' SINCE 1 HOUR AGO TIMESERIES`;
+      expect(query).toContain('average(duration)');
+      expect(query).toContain('FROM Transaction');
+      expect(query).toContain('WHERE appName');
+      expect(query).toContain('TIMESERIES');
+      expect(query).not.toContain('FACET');
+    });
+
+    it('should construct response time query without appName filter', () => {
+      const query = `SELECT average(duration) as responseTime FROM Transaction SINCE 1 HOUR AGO FACET appName TIMESERIES`;
       expect(query).toContain('average(duration)');
       expect(query).toContain('FROM Transaction');
       expect(query).toContain('FACET appName');
       expect(query).toContain('TIMESERIES');
+      expect(query).not.toContain('WHERE');
     });
 
     it('should construct throughput query', () => {
-      const query = `SELECT rate(count(*), 1 minute) as throughput, appName FROM Transaction SINCE 1 HOUR AGO FACET appName TIMESERIES`;
+      const query = `SELECT rate(count(*), 1 minute) as throughput FROM Transaction SINCE 1 HOUR AGO FACET appName TIMESERIES`;
       expect(query).toContain('rate(count(*), 1 minute)');
       expect(query).toContain('as throughput');
     });
 
     it('should construct error rate query', () => {
-      const query = `SELECT percentage(count(*), WHERE error IS true) as errorRate, appName FROM Transaction SINCE 1 HOUR AGO FACET appName TIMESERIES`;
+      const query = `SELECT percentage(count(*), WHERE error IS true) as errorRate FROM Transaction SINCE 1 HOUR AGO FACET appName TIMESERIES`;
       expect(query).toContain('percentage(count(*), WHERE error IS true)');
       expect(query).toContain('as errorRate');
     });
 
     it('should construct apdex query', () => {
-      const query = `SELECT apdex(duration, t: 0.5) as apdex, appName FROM Transaction SINCE 1 HOUR AGO FACET appName`;
+      const query = `SELECT apdex(duration, t: 0.5) as apdex FROM Transaction SINCE 1 HOUR AGO FACET appName`;
       expect(query).toContain('apdex(duration, t: 0.5)');
       expect(query).toContain('as apdex');
     });
